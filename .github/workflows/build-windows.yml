@@ -1,0 +1,65 @@
+name: Windows 可执行文件构建
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 测试并编译 Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      CGO_ENABLED: '0'
+      GOOS: windows
+      GOARCH: amd64
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: 运行单元测试
+        run: go test -timeout 60s ./...
+
+      - name: 静态检查
+        run: go vet ./...
+
+      - name: 编译并整理下载包
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          go build -trimpath -ldflags '-s -w' -o dist/orcabridge.exe .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item README.md, LICENSE -Destination dist
+          $buildInfo = @(
+            "仓库：$env:GITHUB_REPOSITORY"
+            "提交：$env:GITHUB_SHA"
+            "构建：https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            "平台：Windows x64"
+            "Go：$(go version)"
+          )
+          $buildInfo | Set-Content dist/BUILD-INFO.txt -Encoding utf8
+          $binaryHash = (Get-FileHash dist/orcabridge.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$binaryHash  orcabridge.exe" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+
+      - name: 上传 Windows 下载包
+        uses: actions/upload-artifact@v4
+        with:
+          name: orcabridge-windows-x64
+          path: dist/
+          if-no-files-found: error
+          retention-days: 90

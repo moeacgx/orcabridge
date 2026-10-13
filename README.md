@@ -15,6 +15,14 @@
 
 ## 快速开始
 
+### Windows 可执行文件下载（本 fork）
+
+打开 [Windows 构建页面](https://github.com/moeacgx/orcabridge/actions/workflows/build-windows.yml)，
+选择最近一次成功的构建，在页面底部 **Artifacts** 下载 `orcabridge-windows-x64`。
+下载需要登录 GitHub。解压后即可获得 `orcabridge.exe`，适用于 Windows 11 x64。
+下载包附带许可证、源码提交信息和 SHA256 校验值；构建产物保留 90 天。
+推送到 `main` 会自动测试并构建，也可以点击 **Run workflow** 手动构建。
+
 先打开 OrcaTerm 并登录，然后启动：
 
 ```powershell
